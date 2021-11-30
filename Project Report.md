@@ -13,9 +13,18 @@ An analysis of publicly available street crime data for the Metropolitan police,
 ### Dataset
 (Provide a description of your dataset and source. Also justify why you chose this source)
 
-The dataset consists of 2020 street crime data for the Metropolitan Police, published under the Open Government License 3.0.(https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/) and available for download from https://data.police.uk.
+The main dataset consists of 2020 street crime data for the Metropolitan Police, published under the Open Government License 3.0.(https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/) and available for download from https://data.police.uk. Data is available for all UK police forces, but for the purpose of this exercise I have focused on the Metropolitan Police. 
 
-Data is available for all UK police forces, but for the purpose of this exercise I have focused on the Metropolitan Police. The data is in CSV format and comprises the following fields;
+Additional data has been obtained from https://www.trustforlondon.org.uk/data/boroughs/overview-of-london-boroughs/. This contains ratings for key indicators across all London Boroughs, including;
+* Poverty Rate
+* Income Inequality
+* Pay Inequality
+* Rough Sleeping
+* Unemployment Rate
+
+This will be merged with the street crime data to provide more features for the machine learning analysis.
+
+The main street crime data is in CSV format and comprises the following fields;
 
 #### Field Meaning
 

@@ -63,7 +63,7 @@ print(df_merged.shape)
 # Do the merge
 print('do the merge...')
 df = pd.merge(df_crimes_filtered, df_keyindicators, on="Borough",how="left")
-df.to_excel('df.xlsx')
+df.to_excel('df.xlsx') # Export it to check it
 
 print(df.columns)
 print(df.shape)

@@ -13,7 +13,6 @@ df_keyindicators = pd.read_sql('SELECT * FROM KEY_INDICATORS', con=db_connection
 # By default, the Month columns contains the year and month in the format yyyy-mm
 # Create a new Year column from the Month column and
 # update the Month column so that it only contains the Month value,
-
 df_crimes['Year'] =  df_crimes.Month.str.slice(0,4)
 df_crimes['Month'] = df_crimes.Month.str.slice(5)
 
@@ -37,8 +36,6 @@ df_crimes_filtered = df_crimes[df_crimes['Borough'].isin(boroughs)]
 
 # Check to see what we are left with. By doing a count of unique values in the Borough column
 # we should be left with only crimes with London Boroughs specified (33 in total)
-print(df_crimes.shape)
-print(df_crimes_filtered.shape)
 print(df_crimes_filtered['Borough'].value_counts())
 
 # Next we want to filter out anything in the crimes data WITHOUT a CrimeID, as without that we can't determine an outcome

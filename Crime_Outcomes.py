@@ -20,26 +20,26 @@ df_crimes['Month'] = df_crimes.Month.str.slice(5)
 # Split the 'LSOA name' column using rpartition()
 # rpartition results in a dataframe ('result') comprising 3 columns;
 # [0] The Region [1] A Space [2] The LSOA Code
-# Use column [0] to create a new Region column
+# Use column [0] to create a new Borough column
 
 result = df_crimes['LSOA name'].str.rpartition()
-df_crimes['Region'] = result[0]
+df_crimes['Borough'] = result[0]
 
-# Count Crimes by Region then Sort Descending
+# Count Crimes by Borough then Sort Descending
 # The top 33 values should contain all the London Boroughs
-region_summary = df_crimes.groupby(['Region']).Region.count()
-sorted_region_summary = region_summary.sort_values(ascending=False)
-data = sorted_region_summary.head(33)
+Borough_summary = df_crimes.groupby(['Borough']).Borough.count()
+sorted_Borough_summary = Borough_summary.sort_values(ascending=False)
+data = sorted_Borough_summary.head(33)
 boroughs = data.index.to_list()
 
 # Use the boroughs list to filter the original crimes data frame
-df_crimes_filtered = df_crimes[df_crimes['Region'].isin(boroughs)]
+df_crimes_filtered = df_crimes[df_crimes['Borough'].isin(boroughs)]
 
-# Check to see what we are left with. By doing a count of unique values in the Regions column
+# Check to see what we are left with. By doing a count of unique values in the Borough column
 # we should be left with only crimes with London Boroughs specified (33 in total)
-# print(df_crimes.shape)
-# print(df_crimes_filtered.shape)
-# print(df_crimes_filtered['Region'].value_counts())
+print(df_crimes.shape)
+print(df_crimes_filtered.shape)
+print(df_crimes_filtered['Borough'].value_counts())
 
 # Next we want to filter out anything in the crimes data WITHOUT a CrimeID, as without that we can't determine an outcome
 # from the outcomes data
@@ -57,12 +57,17 @@ print("Merging Crimes and Outcomes..")
 df_merged = pd.merge(df_crimes_filtered, df_outcomes, on="Crime ID",how="left")
 df_merged_filtered = df_merged.dropna(subset=['Outcome type'])
 
-# df_merged_filtered.to_excel('df_merged_filtered.xlsx')
-df_keyindicators.to_excel('df_keyindicators.xlsx')
-
-# Now we want to merge the Key Indicators data based on Region and London Borough
+# Now we want to merge the Key Indicators data based on London Borough
 print(df_merged.columns)
 print(df_merged.shape)
+# Do the merge
+print('do the merge...')
+df = pd.merge(df_crimes_filtered, df_keyindicators, on="Borough",how="left")
+df.to_excel('df.xlsx')
+
+print(df.columns)
+print(df.shape)
+
 
 
 

@@ -60,10 +60,14 @@ print(df_merged.shape)
 # Do the merge
 print('do the merge...')
 df = pd.merge(df_crimes_filtered, df_keyindicators, on="Borough",how="left")
-df.to_excel('df.xlsx') # Export it to check it
+# df.to_excel('df.xlsx') # Export it to check it
 
 print(df.columns)
 print(df.shape)
+
+df_test = pd.get_dummies(df['Crime type'])
+df_test.to_excel('df_test.xlsx') # Export it to check it
+print(df_test.columns)
 
 
 

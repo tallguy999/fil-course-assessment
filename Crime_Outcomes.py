@@ -1,73 +1,77 @@
 import pandas as pd
 import mysql.connector as sql
 import openpyxl
+import my_functions as myfunctions
+debug = 0
 
 db_connection = sql.connect(user='me0RUcEKLC',password='NYzWbTM2H6',host='remotemysql.com',database='me0RUcEKLC')
 pd.options.display.max_columns = 50
 
-# Use the 'usecols' parameter to only bring in the columns we need.
-df_crimes = pd.read_csv('sample_crimes.csv', usecols=['Crime ID', 'Month', 'LSOA name', 'Crime type', 'Last outcome category'])
+# Crimes and Outcomes data is imported from the CSV files downloaded from https://data.police.uk/data/
+# For the purpose of demonstrating the import of data from a relational database, the Key Indicators data was first
+# downloaded from https://data.police.uk/data/ and then imported to a remote MySQL database at https://remotemysql.com.
+# An additional data set, London Borough Profiles, is imported from another CSV file. This builds on the data from the
+# Key Indicators data and provides additional values and scores that can be tied to each London Borough.
+
+df_crimes = pd.read_csv('sample_crimes.csv', usecols=['Crime ID', 'LSOA name', 'Crime type'])
 df_outcomes =  pd.read_csv('sample_outcomes.csv', usecols=['Crime ID', 'Outcome type'])
 df_keyindicators = pd.read_sql('SELECT * FROM KEY_INDICATORS', con=db_connection)
+df_profiles = myfunctions.Process_Profiles('London-Borough-Profiles.csv')
 
-# By default, the Month columns contains the year and month in the format yyyy-mm
-# Create a new Year column from the Month column and
-# update the Month column so that it only contains the Month value,
-df_crimes['Year'] =  df_crimes.Month.str.slice(0,4)
-df_crimes['Month'] = df_crimes.Month.str.slice(5)
-
-# Split the 'LSOA name' column using rpartition()
-# rpartition results in a dataframe ('result') comprising 3 columns;
-# [0] The Region [1] A Space [2] The LSOA Code
-# Use column [0] to create a new Borough column
+# PROCESSING THE CRIMES DATA;
+# Split the 'LSOA name' column using rpartition(). rpartition results in a dataframe ('result') comprising 3 columns;
+# Column[0] The Region, Column[1] A Space, Column[2] The LSOA Code
+# Use column [0] to create a new Borough column then drop the original 'LSOA name' column
 
 result = df_crimes['LSOA name'].str.rpartition()
 df_crimes['Borough'] = result[0]
+df_crimes.drop('LSOA name', axis=1, inplace=True)
 
-# Count Crimes by Borough then Sort Descending
-# The top 33 values should contain all the London Boroughs
+# The crimes data contains a small number of crimes (0.45%) committed outside the Greater London area.
+# We only want data that can be specifically tied to a London Borough.
+# To find and remove the crimes not committed in London;
+#   Use 'groupby' and 'count' on the 'Borough' column to create a list ordered by count of unique values.
+#   Use 'head' to extract the top 33 rows.
+
 Borough_summary = df_crimes.groupby(['Borough']).Borough.count()
 sorted_Borough_summary = Borough_summary.sort_values(ascending=False)
+
 data = sorted_Borough_summary.head(33)
 boroughs = data.index.to_list()
 
-# Use the boroughs list to filter the original crimes data frame
-df_crimes_filtered = df_crimes[df_crimes['Borough'].isin(boroughs)]
+# Now we have a list of London Boroughs, we use that list to filter out all the Non-London regions in the Crimes data
+df_crimes = df_crimes[df_crimes['Borough'].isin(boroughs)]
 
-# Check to see what we are left with. By doing a count of unique values in the Borough column
-# we should be left with only crimes with London Boroughs specified (33 in total)
-print(df_crimes_filtered['Borough'].value_counts())
+# By doing a count of unique values in the Borough column we should be left with a list of the 33 London Boroughs
+print(df_crimes['Borough'].value_counts())
 
-# Next we want to filter out anything in the crimes data WITHOUT a CrimeID, as without that we can't determine an outcome
-# from the outcomes data
-print("Before DropNA on Crime ID column")
-print(df_crimes_filtered.shape)
-df_crimes_filtered = df_crimes_filtered.dropna(subset=['Crime ID'])
-print("After DropNA on Crime ID column")
-print(df_crimes_filtered.shape)
+# Next we want to filter out anything in the Crimes data WITHOUT a CrimeID, without that we can't determine an outcome
+# when we merge the Outcomes dataframe, so this needs to be removed.
+df_crimes = df_crimes.dropna(subset=['Crime ID'])
 
-# Now we merge crime and outcome data using the CrimeID. We are only interested in rows where;
+# Also drop rows where 'Crime type' is shown as the generic 'Other crime' or 'Other theft'
+df_crimes = df_crimes[df_crimes['Crime type']!= 'Other crime']
+df_crimes = df_crimes[df_crimes['Crime type']!= 'Other theft']
+
+# MERGE CRIMES AND OUTCOME DATA
+# Now merge 'crime' and 'outcome' data using 'CrimeID'. We are only interested in rows where;
 # 1. We have a full row of data in the crimes dataframe
 # 2. We have an outcome type in the outcomes dataframe
-# We use LEFT to retain all rows with Crime IDs in 'crimes' then remove the blank Outcome Type rows after the merge.
-print("Merging Crimes and Outcomes..")
-df_merged = pd.merge(df_crimes_filtered, df_outcomes, on="Crime ID",how="left")
-df_merged_filtered = df_merged.dropna(subset=['Outcome type'])
+# Use LEFT to retain all rows with Crime IDs in 'crimes' then remove the rows with missing 'Outcome Type'.
+df_crimes = pd.merge(df_crimes, df_outcomes, on="Crime ID",how="left")
+df_crimes = df_crimes.dropna(subset=['Outcome type'])
+myfunctions.Restructure_Outcomes(df_crimes)
 
-# Now we want to merge the Key Indicators data based on London Borough
-print(df_merged.columns)
-print(df_merged.shape)
-# Do the merge
-print('do the merge...')
-df = pd.merge(df_crimes_filtered, df_keyindicators, on="Borough",how="left")
-# df.to_excel('df.xlsx') # Export it to check it
+# MERGE THE KEY INDICATORS DATA
+# Now we merge the Key Indicators data based on London Borough and assign to our main dataframe; df
+df_crimes = pd.merge(df_crimes, df_keyindicators, on="Borough",how="left")
 
-print(df.columns)
-print(df.shape)
+# MERGE THE LONDON BOROUGH PROFILES DATA
+df_crimes = pd.merge(df_crimes, df_profiles, on="Borough",how="left")
 
-df_test = pd.get_dummies(df['Crime type'])
-df_test.to_excel('df_test.xlsx') # Export it to check it
-print(df_test.columns)
+myfunctions.ExportToExcel(df_crimes, 'df_crimes')
+
+
 
 
 

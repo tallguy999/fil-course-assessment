@@ -1,44 +1,55 @@
+from sklearn import datasets
 import pandas as pd
-import mysql.connector as sql
-import my_functions as myfunctions
-db_connection = sql.connect(user='me0RUcEKLC',password='NYzWbTM2H6',host='remotemysql.com',database='me0RUcEKLC')
 pd.options.display.max_columns = 50
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
 
-inner_boroughs = ['Camden','City of London','Hackney','Hammersmith and Fulham','Haringey','Islington','Kensington and Chelsea','Lambeth','Lewisham','Newham','Southwark','Tower Hamlets','Wandsworth','Westminster']
-outer_boroughs = ['Barking and Dagenham','Barnet','Bexley','Brent','Bromley','Croydon','Ealing','Enfield','Greenwich','Harrow','Havering','Hillingdon','Hounslow','Kingston upon Thames','Merton','Redbridge','Richmond upon Thames','Sutton','Waltham Forest']
-boroughs = inner_boroughs + outer_boroughs
+plt.style.use('ggplot')
 
-# 2. Importing Data
-# Read in the crimes data. We are only interested in the Crime Type and the Borough in which it was committed
-df_crimes = pd.read_csv('sample_crimes.csv', usecols=['LSOA name', 'Crime type'])
+df = pd.read_csv('dump.csv')
 
-df_profiles = myfunctions.Process_Profiles('London-Borough-Profiles.csv')
-df_keyindicators = pd.read_sql('SELECT * FROM KEY_INDICATORS', con=db_connection)
+# Creating feature and target arrays
+X = df.drop('Crime Count', axis=1).values
+y = df['Crime Count'].values
+
+# Slice out the Population column, which is column 3
+X_Population = X[:,3]
+# X_Pop_Density = X[:,6]
+# X_Pop_Young = X[:,7]
+# X_Unemployment_Rate = X[:,13]
+# X_Rented_Local_Authority = X[:,15]
 
 
-# Split out the Region 'LSOA name', create the 'Borough' column, then drop the original 'LSOA name'
-result = df_crimes['LSOA name'].str.rpartition()
-df_crimes['Borough'] = result[0]
-df_crimes.drop('LSOA name', axis=1, inplace=True)
+X_Population = X_Population.reshape(-1, 1)
+# X_Pop_Density = X_Pop_Density.reshape(-1, 1)
+# X_Pop_Young = X_Pop_Young.reshape(-1, 1)
+# X_Rented_Local_Authority = X_Rented_Local_Authority.reshape(-1, 1)
+# X_Unemployment_Rate = X_Unemployment_Rate.reshape(-1, 1)
 
-# Drop all the rows that aren't committed within a London borough
-df_crimes = df_crimes[df_crimes['Borough'].isin(boroughs)]
+y = y.reshape(-1, 1)
 
-# Summarise the crime data by counting the total crimes by borough.
-# df = df_crimes.groupby(['Borough'])['Crime type'].count()
-df = df_crimes.groupby(['Borough']).count()
+# Plot the correlation between Population and Crime Count
+# plt.scatter(X_Population, y)
+# plt.ylabel('Drugs Offences (October 2021)')
+# plt.xlabel('Population')
+# plt.show()
 
-# Merge the profiles data with the borough / crime data
-# Then merge again with the Key Indicators data
-df = pd.merge(df, df_profiles, on="Borough",how="left")
-df = pd.merge(df, df_keyindicators, on="Borough",how="left")
-# The Area(Hectares) column has commas as thousand-separators. Remove these using RegEx.
-df = df.replace(to_replace=r',',value='',regex=True)
 
-# Rename the 'Crime type' column to 'Crime Count'
-df.rename(columns = {'Crime type':'Crime Count'}, inplace = True)
+# Fitting a Regression Model
+reg = LinearRegression()
+reg.fit(X_Population, y)
+prediction_space = np.linspace(min(X_Population), max(X_Population)).reshape(-1, 1)
+plt.scatter(X_Population, y, color='blue')
+plt.plot(prediction_space, reg.predict(prediction_space), color='black', linewidth=3)
+plt.show()
 
-myfunctions.ExportToCSV(df, 'test2')
+
+
+
+
+
+
 
 
 

@@ -31,7 +31,9 @@ def Get_Crimes(filename, boroughs, crime):
     # Use the passed boroughs list to filter out the non-London regions
     df = df[df['Borough'].isin(boroughs)]
     # Use the passed 'crime' value to filter out the unwanted crime types
-    df = df[df['Crime type'] == crime]
+    # df = df[df['Crime type'] == crime]
+    df = df[df['Crime type'].isin(crime)]
+
     df = df.groupby(['Borough']).count()
     df.sort_values(by=['Borough'], inplace=True)
     df.rename(columns={'Crime type': 'Crime Count'}, inplace=True)
@@ -65,8 +67,8 @@ def Get_Profiles(url):
     new_column_names = new_column_names['New'].values.tolist()
     df.columns = new_column_names
 
-    # Missing values are identified with a single '.' in this data frame, which means functions such as .isnull() and
-    # .dropna() won't pick these up. Here we will use RegEx to find those single "." characters and use Numpy to
+    # Missing values are identified with a single '.', which means functions such as .isnull() and
+    # .dropna() won't pick these up. Use RegEx to find those single "." characters and use Numpy to
     # replace with a NaN value.
     if debug:
         print("Before RegEx Replacement:")
@@ -92,7 +94,7 @@ def Get_Profiles(url):
     df.loc[df['Borough'] == 'City of London', 'Rented_Local_Authority'] = df['Rented_Local_Authority'].min() / 2
 
 
-    # Adult Employment and Unemployment figures are also missing for the City. The total Employment
+    # Specific male and female Employment and Unemployment figures are also missing for the City. The total Employment
     # figure for the City is 64% which is 8 points below the average. On that basis we will take the average values
     # for Percent_Employed_Male and Percent_Employed_Female and reduce those by 8% for the City.
     df.loc[df['Borough'] == 'City of London', 'Percent_Employed_Male'] = int(df['Percent_Employed_Male'].mean() * 0.92)

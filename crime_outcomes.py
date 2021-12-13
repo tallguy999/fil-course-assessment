@@ -8,10 +8,10 @@ db_connection = sql.connect(user='me0RUcEKLC',password='NYzWbTM2H6',host='remote
 pd.options.display.max_columns = 50
 
 # Crimes and Outcomes data is imported from the CSV files downloaded from https://data.police.uk/data/
-# For the purpose of demonstrating the import of data from a relational database, the Key Indicators data was first
+# For the purpose of demonstrating the import of data from a relational database, "Key Indicators" data was first
 # downloaded from https://data.police.uk/data/ and then imported to a remote MySQL database at https://remotemysql.com.
-# An additional data set, London Borough Profiles, is imported from another CSV file. This builds on the data from the
-# Key Indicators data and provides additional values and scores that can be tied to each London Borough.
+# An additional data set, "London Borough Profiles", is imported from a CSV file. This builds on "Key Indicators" and
+# provides additional quantitative data that can be tied to each London Borough.
 
 df_crimes = pd.read_csv('sample_crimes.csv', usecols=['Crime ID', 'LSOA name', 'Crime type'])
 df_outcomes =  pd.read_csv('sample_outcomes.csv', usecols=['Crime ID', 'Outcome type'])
@@ -32,18 +32,23 @@ df_crimes.drop('LSOA name', axis=1, inplace=True)
 # To find and remove the crimes not committed in London;
 #   Use 'groupby' and 'count' on the 'Borough' column to create a list ordered by count of unique values.
 #   Use 'head' to extract the top 33 rows.
+# The resulting dataframe (df_borough_crime_count) will form part of the data set used for linear regression later in
+# the process.
 
 Borough_summary = df_crimes.groupby(['Borough']).Borough.count()
 sorted_Borough_summary = Borough_summary.sort_values(ascending=False)
 
-data = sorted_Borough_summary.head(33)
-boroughs = data.index.to_list()
+df_borough_crime_count = sorted_Borough_summary.head(33)
+myfunctions.ExportToExcel(df_borough_crime_count)
+boroughs = df_borough_crime_count.index.to_list()
 
-# Now we have a list of London Boroughs, we use that list to filter out all the Non-London regions in the Crimes data
+
+# Now we have a list of London Boroughs (boroughs), we can use this to filter out all
+# Non-London regions in the Crimes data.
 df_crimes = df_crimes[df_crimes['Borough'].isin(boroughs)]
 
 # By doing a count of unique values in the Borough column we should be left with a list of the 33 London Boroughs
-print(df_crimes['Borough'].value_counts())
+# print(df_crimes['Borough'].value_counts())
 
 # Next we want to filter out anything in the Crimes data WITHOUT a CrimeID, without that we can't determine an outcome
 # when we merge the Outcomes dataframe, so this needs to be removed.
@@ -60,7 +65,8 @@ df_crimes = df_crimes[df_crimes['Crime type']!= 'Other theft']
 # Use LEFT to retain all rows with Crime IDs in 'crimes' then remove the rows with missing 'Outcome Type'.
 df_crimes = pd.merge(df_crimes, df_outcomes, on="Crime ID",how="left")
 df_crimes = df_crimes.dropna(subset=['Outcome type'])
-myfunctions.Restructure_Outcomes(df_crimes)
+# Replace values in the Outcome type column so that 1 indicates a suspect identifed and 0 no suspect identified
+df_crimes = myfunctions.Restructure_Outcomes(df_crimes)
 
 # MERGE THE KEY INDICATORS DATA
 # Now we merge the Key Indicators data based on London Borough and assign to our main dataframe; df
@@ -68,8 +74,9 @@ df_crimes = pd.merge(df_crimes, df_keyindicators, on="Borough",how="left")
 
 # MERGE THE LONDON BOROUGH PROFILES DATA
 df_crimes = pd.merge(df_crimes, df_profiles, on="Borough",how="left")
+df_borough_crime_count = pd.merge(df_borough_crime_count, df_profiles, on="Borough",how="left")
 
-myfunctions.ExportToExcel(df_crimes, 'df_crimes')
+myfunctions.ExportToExcel(df_borough_crime_count, 'df_borough_crime_count')
 
 
 

@@ -12,7 +12,6 @@ def ExportExcel(df, filename='dump.xlsx'):
     if last_chars != ".xlsx":
         filename = filename + '.xlsx'
     df.to_excel(filename)
-    df.to_csv('dump.csv')
 
     return(filename)
 

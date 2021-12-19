@@ -2,16 +2,19 @@ import pandas as pd
 pd.options.display.max_columns = 50
 import numpy as np
 import matplotlib.pyplot as plt
+
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import Ridge
 from sklearn.linear_model import Lasso
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+
 import functions_script as mf
 
 plt.style.use('ggplot')
 
-df = pd.read_csv('dump.csv')
+df = pd.read_csv('dump.csv') # For testing, just use a dump of the main dataset created by the main script.
 # Drop the Borough column as it is non-numeric and will cause errors
 df.drop(df.columns[1], axis = 1, inplace = True)
 
@@ -19,6 +22,7 @@ df.drop(df.columns[1], axis = 1, inplace = True)
 X = df.drop(['Unnamed: 0','Crime Count'], axis=1).values
 y = df['Crime Count'].values
 y = y.reshape(-1, 1)
+print("-----------------------------")
 
 # Plotting Linear Regression on ALL features
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.5, random_state = 42)
@@ -26,27 +30,47 @@ reg_all = LinearRegression()
 reg_all.fit(X_train, y_train)
 y_pred = reg_all.predict(X_test)
 print("Linear Regression / Using Train Test Split: ", reg_all.score(X_test, y_test))
+print("-----------------------------")
 
 # Use Cross Validation
 reg_cross = LinearRegression()
 cv_results = cross_val_score(reg_cross, X, y, cv = 5)
 print("Linear Regression / Using Cross Validation: ", cv_results)
-print("Linear Regression / Using Cross Validation / Mean: ", np.mean(cv_results))
+print("Average 5-Fold CV Score: {}".format(np.mean(cv_results)))
+print("-----------------------------")
 
-# Use Ridge Regression
+# Use Ridge Regression with a fixed alpha
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
 # ridge = Ridge(alpha = 15, normalize = True)
 ridge = Ridge(alpha = 15)
 ridge.fit(X_train, y_train)
 ridge_pred = ridge.predict(X_test)
 print("Ridge Regression: ", ridge.score(X_test, y_test))
+print("-----------------------------")
 
-# Use Lasso Regression
+# Use Lasso Regression with a fixed alpha
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
-lasso = Lasso(alpha = 20)
+lasso = Lasso(alpha = 15)
 lasso.fit(X_train, y_train)
 lasso_pred = lasso.predict(X_test)
 print("Lasso Regression: ", lasso.score(X_test, y_test))
+print("-----------------------------")
+
+# Use Grid Search CV with Ridge Regression
+param_grid = {'alpha': np.arange(1, 30)}
+ridge_grid = Ridge()
+ridge_grid_cv = GridSearchCV(ridge_grid, param_grid, cv=5)
+ridge_grid_cv.fit(X, y)
+print(ridge_grid_cv.best_params_)
+print(ridge_grid_cv.best_score_)
+print("-----------------------------")
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
+lasso = Lasso(alpha = 15)
+lasso.fit(X_train, y_train)
+lasso_pred = lasso.predict(X_test)
+print("Grid Search CV with Ridge Regression: ", lasso.score(X_test, y_test))
+print("-----------------------------")
 
 # Use Lasso for feature selection. Plot coefficients to determine the best features for prediction
 names = df.drop(['Unnamed: 0', 'Crime Count'], axis = 1).columns

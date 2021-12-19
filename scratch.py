@@ -25,21 +25,24 @@ y = y.reshape(-1, 1)
 print("-----------------------------")
 
 # Plotting Linear Regression on ALL features
+print("Linear Regression / Train Test Split: All Features")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.5, random_state = 42)
 reg_all = LinearRegression()
 reg_all.fit(X_train, y_train)
 y_pred = reg_all.predict(X_test)
-print("Linear Regression / Using Train Test Split: ", reg_all.score(X_test, y_test))
+print(reg_all.score(X_test, y_test))
 print("-----------------------------")
 
 # Use Cross Validation
+print("Linear Regression / Cross Validation")
 reg_cross = LinearRegression()
 cv_results = cross_val_score(reg_cross, X, y, cv = 5)
-print("Linear Regression / Using Cross Validation: ", cv_results)
+print(cv_results)
 print("Average 5-Fold CV Score: {}".format(np.mean(cv_results)))
 print("-----------------------------")
 
 # Use Ridge Regression with a fixed alpha
+print("Ridge Regression / Fixed Alpha: All Features")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
 # ridge = Ridge(alpha = 15, normalize = True)
 ridge = Ridge(alpha = 15)
@@ -49,6 +52,7 @@ print("Ridge Regression: ", ridge.score(X_test, y_test))
 print("-----------------------------")
 
 # Use Lasso Regression with a fixed alpha
+print("Lasso Regression / Fixed Alpha: All Features")
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
 lasso = Lasso(alpha = 15)
 lasso.fit(X_train, y_train)
@@ -57,19 +61,13 @@ print("Lasso Regression: ", lasso.score(X_test, y_test))
 print("-----------------------------")
 
 # Use Grid Search CV with Ridge Regression
-param_grid = {'alpha': np.arange(1, 30)}
+print("HyperParameter Tuning / Ridge Regression")
+param_grid = {'alpha': np.arange(1, 50)}
 ridge_grid = Ridge()
 ridge_grid_cv = GridSearchCV(ridge_grid, param_grid, cv=5)
 ridge_grid_cv.fit(X, y)
-print(ridge_grid_cv.best_params_)
-print(ridge_grid_cv.best_score_)
-print("-----------------------------")
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.3, random_state = 42)
-lasso = Lasso(alpha = 15)
-lasso.fit(X_train, y_train)
-lasso_pred = lasso.predict(X_test)
-print("Grid Search CV with Ridge Regression: ", lasso.score(X_test, y_test))
+print("GridSearch / Best Params: ", ridge_grid_cv.best_params_)
+print("GridSearch / Best Score: ", ridge_grid_cv.best_score_)
 print("-----------------------------")
 
 # Use Lasso for feature selection. Plot coefficients to determine the best features for prediction

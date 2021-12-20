@@ -30,7 +30,6 @@ def Get_Crimes(filename, boroughs, crime):
     # Use the passed boroughs list to filter out the non-London regions
     df = df[df['Borough'].isin(boroughs)]
     # Use the passed 'crime' value to filter out the unwanted crime types
-    # df = df[df['Crime type'] == crime]
     df = df[df['Crime type'].isin(crime)]
 
     df = df.groupby(['Borough']).count()
@@ -104,22 +103,10 @@ def Get_Profiles(url):
     # Use the Borough dataframe column to create a list of Boroughs
     # This will be used on the Crimes data to filter out Non-London regions
     boroughs = df['Borough'].values.tolist()
-
     return df, boroughs
 
 def Get_Key_Indicators():
     db_connection = sql.connect(user='me0RUcEKLC', password='NYzWbTM2H6', host='remotemysql.com', database='me0RUcEKLC')
-    df = pd.read_sql('SELECT * FROM KEY_INDICATORS', con=db_connection)
-
+    df = pd.read_sql('SELECT Benefits, Borough, Child_Poverty, Homelessness, Income_Inequality, Median_Rent, Poverty, Repossessions, Sleeping_Rough FROM KEY_INDICATORS', con=db_connection)
     return df
 
-def Restructure_Outcomes(df):
-    # Not currently used - Kept here in case I decide to use it!
-    df = df.replace({'Outcome type': 'Investigation complete; no suspect identified'}, 0)
-    df = df.replace({'Outcome type': 'Suspect charged'}, 1)
-    df = df.replace({'Outcome type': 'Offender given penalty notice'}, 1)
-    df = df.replace({'Outcome type': 'Offender given a drugs possession warning'}, 1)
-    df = df.replace({'Outcome type': 'Offender given a caution'}, 1)
-    df = df.replace({'Outcome type': 'Local resolution'}, 1)
-    df = df.replace({'Outcome type': 'Formal action is not in the public interest'}, 1)
-    return df

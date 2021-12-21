@@ -5,16 +5,17 @@
 https://github.com/tallguy999/fil-course-assessment
 
 ### Abstract
-An analysis of London street crime data and London Borough Profile data, to determine whether there is any correlation 
-between London Borough key metrics (Such as poverty, unemployment, age etc.) and the total amount of reported crime for that borough.
+An analysis of London street crime data and London borough profile data, to identify whether there is any correlation 
+between London borough key metrics (Such as poverty, unemployment, age etc.) and the amount of reported crime.
 
 ### Introduction
-I previously worked with this Police crime data to understand the impact of the COVID pandemic on reported crime, in particular
-the impact of COVID lockdowns, therefore it is a dataset of which I have some familiarity. Having also spent a few years serving in the 
-Metropolitan Police I have some understanding of the makeup of London and it's boroughs in relation to crime.
+I previously worked with this data to understand the possible impact of the COVID pandemic on reported crime, in particular
+the impact of COVID lockdowns, therefore it is a dataset of which I am familiar. Having also spent a few years serving in the 
+Metropolitan Police I have some understanding as to the makeup of London and it's boroughs in relation to crime.
 
 The code has been developed so that individual crime types can be filtered from the crime data. For the 
 purpose of this exercise, that filter will be set to focus on **Public Order** offences for the month of October 2019. 
+
 Other crime types that can be analyzed include;
 
 - Anti-social behaviour
@@ -33,14 +34,13 @@ Other crime types that can be analyzed include;
 
 > You can set different crime types by commenting / uncommenting the relevent lines at the top of main_script.py
 
-
 ### Dataset
-There are three data sources used in this exercise; 
+There are three sets used in this exercise; 
 
 #### Street Crime Data
-Source: https://data.police.uk
+>Source: https://data.police.uk
 
-License: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+>License: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
 
 This data set consists of reported street crimes. It is published under the Open Government License 3.0 and is available 
 for all UK police forces, but for this exercise I have focused on the Metropolitan Police.
@@ -69,9 +69,9 @@ borough profile and key indicators data, to provide a spread of numeric data tha
 linear regression.
 
 #### London Borough Profiles
-Source: https://data.london.gov.uk/download/london-borough-profiles/80647ce7-14f3-4e31-b1cd-d5f7ea3553be/london-borough-profiles.xlsx
+>Source: https://data.london.gov.uk/download/london-borough-profiles/80647ce7-14f3-4e31-b1cd-d5f7ea3553be/london-borough-profiles.xlsx
 
-License: http://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/
+>License: http://www.nationalarchives.gov.uk/doc/open-government-licence/version/2/
 
 This data is provided as an Excel workbook containing three worksheets; _Profiles_, _Data_ and _Chart-Map_. We will be 
 using the information within the _Data_ worksheet for this exercise.
@@ -92,14 +92,14 @@ There are 82 features provided for each borough, grouped into 11 themes;
 _Note: The original Profiles worksheet contains source information for each feature._
 
 #### Borough Ratings Across Key Indicators (2021)
-Source: https://www.trustforlondon.org.uk/data/boroughs/overview-of-london-boroughs/
+>Source: https://www.trustforlondon.org.uk/data/boroughs/overview-of-london-boroughs/
 
-License: Unable to locate license info on website, though data appears to be collected from a number of different sources 
+>License: Unable to locate license info on website, though data appears to be collected from a number of different sources 
 which are referenced. 
 
 This contains further borough specific metrics focused on poverty, homelessness, unemployment etc.
 
-> In order to demonstrate the import of data from a SQL database, a subset of this data was taken from the CSV file and 
+In order to demonstrate the import of data from a SQL database, a subset of this data was taken from the CSV file and 
 uploaded to remote SQL server, then downloaded into the script using a custom function (Get_Key_Indicators)
 
 ##### Data Quality Issues
@@ -111,6 +111,8 @@ London Boroughs. Key Indicators data is the most relevant being published in 202
 - Crime data can be downloaded for 2018 through to 2021. From previous analysis of data collected during the pandemic, 
 I'm aware that COVID lockdowns had a significant impact on the amount of reported crime during 2020, therefore I decided 
 to avoid this time period completely and focus on pre-pandemic data (October 2019).
+
+- Some data is missing for the City of London, but this is handled in the code as explained below.
 
 ### Implementation Process
 1. Create three dataframes from the London Borough Profiles, Crime and Key Indicators data by calling three custom 
@@ -176,41 +178,54 @@ amount of crime committed.
 - Create the target and feature arrays;
     - Drop the *Crime Count* column, leaving all other features and assigning to *X*
     - Slice out the *Crime Count* column to create the target array; *y*
-    
-Then perform the following processes in order;
 
-    1. Linear Regression using Train_Test_Split (Line 60 of main_script.py)
-    This yields a score of -10.035372743519426
+Using *Public Order* as the Crime Type and data from October 2019 yields the following results;
+
+
+    1. Linear Regression using Train_Test_Split
+    test_size = 0.3, random_state = 42
+    Score:  -11.23892254631344
     
-    2. Linear Regression with Cross Validation (Line 70 of main_script.py)
-    Returns [-0.27704644 -0.44870099  0.12954645  0.07383437 -0.71928945]
-    Average 5-Fold CV Score: -0.24833121150287346
+    2. Linear Regression with Cross Validation
+    [ 0.48140135 -0.35919451 -0.15798166 -0.03891356  0.80252637]
+    Average 5-Fold CV Score: 0.1455675972593878
     
-    3. Ridge Regression (Line 78 of main_script.py)
-    This yields a score of -0.04579818315864226
+    3. Ridge Regression
+    Ridge Regression / alpha = 15
+    Ridge Regression:  0.6377549738325152
     
-    4. Lasso Regression (Line 88 of main_script.py)
-    This yields a score of 0.27862015698673825
+    4. Lasso Regression
+    Lasso Regression / alpha = 15
+    Lasso Regression:  0.7690392702770398
     
-    5. HyperParameter Tuning - Grid Search CV with Ridge Regression (Line 98 of main_script.py)
-    GridSearch / Best Params:  {'alpha': 49}
-    GridSearch / Best Score:  -0.8034345345065449
-    
-    6. Use Lasso for feature selection (Line 107 of main_script.py)
+    5. HyperParameter Tuning - Grid Search CV with Ridge Regression
+    Passing alpha values of 1 to 100;
+    GridSearch / Best Params:  {'alpha': 36}
+    GridSearch / Best Score:  -0.2073834079174365
     
 ### Results
   
-We can use Lasso for feature selection, plotting coefficients to determine the best features for prediction.
+Now use Lasso for feature selection, plotting coefficients to determine the best features for prediction.
 
 ![Alt](images/Feature_Selection.png "Feature Selection: Public Order")
 
 This suggests *Rented Local Authority* is the most important feature when predicting the amount of Public Order offences
-in a Borough. Plot this as a linear regression for Public Order against Rented Local Authority.
+in a borough. Plot this as a linear regression for Public Order against Rented Local Authority.
 
-![Alt](images/Linear_Regression.png "Feature Selection: Public Order / Rented Local Authority")
+![Alt](images/Linear_Regression.png "Linear Regression: Public Order / Rented Local Authority")
+
 
 ### Insights
-(Point out at least 5 insights in bullet points)
+1. Running the Lasso feature selection code against various crime types indicates that Poverty and Rented Local Authority
+figures are often a significant factor in the amount of crime committed.
+2. Running the analysis against Public Order offences in September 2019, October 2019 and November 2019 shows consistency
+in that observation, although October shows the clearest correlation.
+3. Instances of _Robbery_ appear to have a very strong correlation to _Poverty_ figures (Chart below).
+4. Whether or not a borough is considered 'inner' or 'outer' London appears to have little importance on crime totals.
+
+![Alt](images/Feature_Selection_Robbery.png "Feature Selection: Robbery")
+![Alt](images/Linear_Regression_Poverty.png "Linear Regression: Robbery / Poverty")
+
 
 ### References
 #### LSOA

@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 import mysql.connector as sql
 import openpyxl
 pd.options.display.max_columns = 50
@@ -35,6 +36,7 @@ def Get_Crimes(filename, boroughs, crime):
     df = df.groupby(['Borough']).count()
     df.sort_values(by=['Borough'], inplace=True)
     df.rename(columns={'Crime type': 'Crime Count'}, inplace=True)
+    print(df)
 
     return df
 
@@ -61,7 +63,7 @@ def Get_Profiles(url):
     df.loc[filter_outer, 'Inner/ Outer London'] = 0
 
     # Rename the columns according to the mappings in Profile_Column_Mapping.xlsx
-    new_column_names = pd.read_excel('Profile_Column_Mapping.xlsx')
+    new_column_names = pd.read_excel('data/Profile_Column_Mapping.xlsx')
     new_column_names = new_column_names['New'].values.tolist()
     df.columns = new_column_names
 
@@ -109,4 +111,6 @@ def Get_Key_Indicators():
     db_connection = sql.connect(user='me0RUcEKLC', password='NYzWbTM2H6', host='remotemysql.com', database='me0RUcEKLC')
     df = pd.read_sql('SELECT Benefits, Borough, Child_Poverty, Homelessness, Income_Inequality, Median_Rent, Poverty, Repossessions, Sleeping_Rough FROM KEY_INDICATORS', con=db_connection)
     return df
+
+
 
